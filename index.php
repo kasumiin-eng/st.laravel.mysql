@@ -1,57 +1,46 @@
 <?php 
 
   //phpMyAdmin接続
-  $db_host = 'localhost';
-  $db_user = 'root';
-  $db_password = 'root';
-  $db_db = 'information_schema';
-  $db_port = 3306;
-
-  $mysqli = new mysqli(
-    $db_host,
-    $db_user,
-    $db_password,
-    $db_db
+  $user = 'root';
+  $password = 'root';
+  $db = 'stnews_database'; 
+  $host = 'localhost';
+  $port = 3306;
+  $link = mysqli_init();
+  //mysqlサーバとの接続をオープンする
+  $success = mysqli_real_connect(
+      $link,
+      $host,
+      $user,
+      $password,
+      $db,
+      $port
   );
-	
-  if ($mysqli->connect_error) {
-    echo 'Errno: '.$mysqli->connect_errno;
-    echo '<br>';
-    echo 'Error: '.$mysqli->connect_error;
-    exit();
-  }
-
-  echo 'Success: A proper connection to MySQL was made.';
-  echo '<br>';
-  echo 'Host information: '.$mysqli->host_info;
-  echo '<br>';
-  echo 'Protocol version: '.$mysqli->protocol_version;
-
-  $mysqli->close();
 
 
-　// mysql:host=ホスト名;dbname=データベース名;charset=文字エンコード
-  $dsn ='mysql:host=localhost;dbname=LaravelNews;charset=utf8';
-　//データベースのユーザー名
-　$user = 'user';
+
+  $dsn = 'mysql:host=localhost;dbname=stnews_database;charset=utf8';
+  //データベースのユーザー名
+  $user = 'root';
   //データベースのパスワード
-　$password = 'pass';
-　//PDOインスタンスを生成
-　$dbh= new PDO($dsn, $user, $password);
-  //例外が発生した時の処理を記述
-} catch (PDOException $e) {
-    //エラーメッセージを表示させる
-    echo 'データベースにアクセスできません！' . $e->getMessage();
-}
-  //データベースとの接続を閉じる
-  $dbh = null;
+  $password = 'root';
+  //tryにPDOの処理を記述
+  try{
+      //PDOインスタンスを生成
+      $dbh = new PDO($dsn, $user, $password);
+      //エラーが発生したときの処理を記述
+    } catch (PDOException $e) {
+        //エラーメッセージを表示させる
+        echo 'データベースにアクセスできません！' . $e->getMessage();
+        //強制終了
+        exit;
+    }
 
+  
+  
 
-
-
-
-
-// メッセージを保存するファイルのパス設定
+  
+//メッセージを保存するファイルのパス設定
 define( 'FILENAME', './message.txt');
 // タイムゾーン設定
 date_default_timezone_set('Asia/Tokyo');
@@ -63,29 +52,26 @@ $split_data = null;
 $message = array();
 $message_array = array();
 $success_message = null;
+$error_message = array();
 // null:特殊な値で変数が値を持たない
 
 
 
-// INSERT文を変数に格納
-//$sql = "INSERT INTO article (id, name, message.txt) VALUES ('$id', '$name', '$message')";
-$sql = "INSERT INTO article (id, name, message.txt) VALUES (:id, :name, now())";
- 
-//挿入する値は空のまま、SQL実行の準備をする
-$stmt = $dbh->prepare($sql);
- 
-// 挿入する値を配列に格納する
-$params = array(':id' => 'おはようございます', ':name' => 'こんにちは');
- 
-// 挿入する値が入った変数をexecuteにセットしてSQLを実行
-$stmt->execute($params);
- 
-// 投稿完了のメッセージ
-echo '投稿完了しました';
-
-
 
 if( !empty($_POST['btn_submit']) ) {
+
+    //表示名の入力チェック
+    if(empty($_POST['view_name']) ) {
+        $error_message[] = '表示名を入力してください。';
+    }
+
+    // メッセージの入力チェック
+	if( empty($_POST['message']) ) {
+		$error_message[] = 'ひと言メッセージを入力してください。';
+	}
+
+	if( empty($error_message) ) {
+
     if( $file_handle = fopen( FILENAME, "a") ) {
         // 書き込み日時を取得
 		$now_date = date("Y-m-d H:i:s");
@@ -100,10 +86,35 @@ if( !empty($_POST['btn_submit']) ) {
         fclose($file_handle);
         
         $success_message = 'メッセージを書き込みました。';
-
     }
-    	
-	var_dump($_POST);
+
+
+
+
+//エラーメッセージを表示する　できてない
+if(empty($_POST['title'])){
+    $error_message[] = 'タイトルは必須です。';}
+if(empty($_POST['txt'])){
+    $error_message[] = '記事は必須です。';}        
+if(strlen($_POST['title']) > 30){
+    $error_message[] = 'タイトルは30字以内で入力してください。';}
+
+    var_dump($_POST);
+    
+
+
+    //if ($_SERVER["REQUEST_METHOD"] === "POST"){
+
+        //文字数制限
+        //if(mb_strlen($_POST["title"])>30){
+          //$ERROR[]="タイトルは30文字以内で入力してください";
+        }
+        //タイトル未入力
+       // else if(empty($_POST["title"])){
+         //$ERROR[]="タイトルを入力してください";}
+        //記事未入力
+        //else if(empty($_POST["text"])){
+         //$ERROR[]="記事を入力してください";}
 }
 
 
@@ -121,16 +132,10 @@ if( $file_handle = fopen( FILENAME,'r') ) {
 
     // ファイルを閉じる
     fclose( $file_handle);
+
+
 }
 
-
-//エラーメッセージを表示する
-if(empty($_POST['title'])){
-    $error_message[] = 'タイトルは必須です。';}
-if(empty($_POST['txt'])){
-    $error_message[] = '記事は必須です。';}
-if(strlen($_POST['title']) > 30){
-    $error_message[] = 'タイトルは30字以内で入力してください。';}
 
 
 
@@ -141,7 +146,7 @@ if(strlen($_POST['title']) > 30){
 <html lang="ja">
 <head>
     <meta charset="utf-8">
-    <title>st assignment</title>
+    <title>st assignmentarticle</title>
 </head>
 
 <body>
@@ -153,21 +158,34 @@ if(strlen($_POST['title']) > 30){
     <?php if( !empty($success_message) ): ?>
     <p class="success_message"><?php echo $success_message; ?></p>
     <?php endif; ?> 
+
+    <?php if( !empty($error_message) ): ?>
+	<ul class="error_message">
+		<?php foreach( $error_message as $value ): ?>
+			<li><?php echo $value; ?></li>
+		<?php endforeach; ?>
+	</ul>
+    <?php endif; ?>
     
     <!--投稿-->
 
 
-    <form method="post">
-        <div class="title">
-        
-		    <p>タイトル：</p>
+    <form name="post">
+        <div>
+           
+            <label for="view_name">タイトル：<label>
 		    <input id="view_name" type="text" name="view_name" value="">
-	    </div>
-	    <div class="article">
-		    <p>記事：</p>
+        
+        </div>
+
+	    
+	    <div>
+		
+            <label for="name">記事：</label>
 		    <textarea name="message" rows="10" cols="60"></textarea>
+    
 	    </div>
-        <div class="submit">
+        <div>
 	        <input type="submit" name="btn_submit" value="投稿">
         </div>    
     </form>
@@ -182,6 +200,9 @@ if(strlen($_POST['title']) > 30){
             <time><?php echo date('Y年m月d日 H:i', strtotime($value['post_date'])); ?></time>
         </div>
         <p><?php echo $value['message']; ?></p>
+        <p>
+            <a href="http://localhost/comment.php">記事全文・コメントを見る</a>
+        <p>
     </article>
     <?php endforeach; ?>
     <?php endif; ?>
@@ -189,5 +210,4 @@ if(strlen($_POST['title']) > 30){
 
 
 </body>
-
 </html>
