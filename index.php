@@ -19,28 +19,58 @@
 
 
 
-  $dsn = 'mysql:host=localhost;dbname=stnews_database;charset=utf8';
+  //$dsn = 'mysql:host=localhost;dbname=stnews_database;charset=utf8';
   //データベースのユーザー名
-  $user = 'root';
+  //$user = 'root';
   //データベースのパスワード
-  $password = 'root';
+  //$password = 'root';
   //tryにPDOの処理を記述
-  try{
+  //try{
       //PDOインスタンスを生成
-      $dbh = new PDO($dsn, $user, $password);
+      //$dbh = new PDO($dsn, $user, $password);
       //エラーが発生したときの処理を記述
-    } catch (PDOException $e) {
+    //} catch (PDOException $e) {
         //エラーメッセージを表示させる
-        echo 'データベースにアクセスできません！' . $e->getMessage();
+       // echo 'データベースにアクセスできません！' . $e->getMessage();
         //強制終了
-        exit;
-    }
+        //exit;
+    //}
+
+
+  //[[id1,name1,message1],[id2,name2,message2], ... ,[id_n,name_n,message_n]]
+  $NEWS_BOARD = [];
+  $name = '';
+  //My SQLからデータを取得
+  $query = "SELECT * FROM `news_table`";
+  if($success) {
+      $result = mysqli_query($link,$query);
+      while ($row = mysqli_fetch_array($result)) {
+          $NEWS_BOARD[] = [$row['id'], $row['name'], $row['message']];
+      }
+  }
+  //何かが投稿されたという意味
+  if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+      if(!empty($_POST['name'])){
+          //名前の追加用のQueryを書く
+          $name = $_POST['name'];
+          $insert_query = "INSERT INTO `news_table`(`id`, `name`, `message`) VALUES (null,'{name}','{message}')";
+          mysqli_query($link, $insert_query);
+          header('Location: ' . $_SERVER['SCRIPT_NAME']);
+          exit;
+      } else if (isset($_POST['del'])) {
+        //削除ボタンを押したときの処理を書く。
+      $delete_query = "DELETE FROM `news_table` WHERE `id` = '{POST['del']}'";
+      mysqli_query($link, $delete_query);
+      header('Location: ' . $SERVER['SCRIPT_NAME']);
+      exit; 
+    }  
+  }  
 
   
   
 
   
-//メッセージを保存するファイルのパス設定
+// メッセージを保存するファイルのパス設定
 define( 'FILENAME', './message.txt');
 // タイムゾーン設定
 date_default_timezone_set('Asia/Tokyo');
@@ -52,69 +82,39 @@ $split_data = null;
 $message = array();
 $message_array = array();
 $success_message = null;
-$error_message = array();
 // null:特殊な値で変数が値を持たない
-
+$error_message = array();
 
 
 
 if( !empty($_POST['btn_submit']) ) {
 
-    //表示名の入力チェック
-    if(empty($_POST['view_name']) ) {
-        $error_message[] = '表示名を入力してください。';
+    //タイトル、記事入力されてない時にエラーメッセージ出す
+    if( empty($_POST['view_name']) ) {
+        $error_message[] = 'タイトルを入力してください。';
     }
-
-    // メッセージの入力チェック
-	if( empty($_POST['message']) ) {
-		$error_message[] = 'ひと言メッセージを入力してください。';
-	}
-
-	if( empty($error_message) ) {
-
-    if( $file_handle = fopen( FILENAME, "a") ) {
-        // 書き込み日時を取得
-		$now_date = date("Y-m-d H:i:s");
-	
-		// 書き込むデータを作成
-		$data = "'".$_POST['view_name']."','".$_POST['message']."','".$now_date."'\n";
-	
-		// 書き込み
-		fwrite($file_handle, $data);
-	
-		// ファイルを閉じる
-        fclose($file_handle);
+    if( empty($_POST['message']) ) {
+        $error_message[] = '記事を入力してください。';
+    }
+    if( empty($error_message) ) {
+        if( $file_handle = fopen( FILENAME, "a") ) {
+            // 書き込み日時を取得
+            $now_date = date("Y-m-d H:i:s");
         
-        $success_message = 'メッセージを書き込みました。';
-    }
-
-
-
-
-//エラーメッセージを表示する　できてない
-if(empty($_POST['title'])){
-    $error_message[] = 'タイトルは必須です。';}
-if(empty($_POST['txt'])){
-    $error_message[] = '記事は必須です。';}        
-if(strlen($_POST['title']) > 30){
-    $error_message[] = 'タイトルは30字以内で入力してください。';}
-
-    var_dump($_POST);
+            // 書き込むデータを作成
+            $data = "'".$_POST['view_name']."','".$_POST['message']."','".$now_date."'\n";
+        
+            // 書き込み
+            fwrite( $file_handle, $data);
+        
+            // ファイルを閉じる
+            fclose($file_handle);
+            
+            $success_message = 'メッセージを書き込みました。';
     
-
-
-    //if ($_SERVER["REQUEST_METHOD"] === "POST"){
-
-        //文字数制限
-        //if(mb_strlen($_POST["title"])>30){
-          //$ERROR[]="タイトルは30文字以内で入力してください";
         }
-        //タイトル未入力
-       // else if(empty($_POST["title"])){
-         //$ERROR[]="タイトルを入力してください";}
-        //記事未入力
-        //else if(empty($_POST["text"])){
-         //$ERROR[]="記事を入力してください";}
+    }
+	
 }
 
 
@@ -132,10 +132,7 @@ if( $file_handle = fopen( FILENAME,'r') ) {
 
     // ファイルを閉じる
     fclose( $file_handle);
-
-
 }
-
 
 
 
@@ -165,31 +162,30 @@ if( $file_handle = fopen( FILENAME,'r') ) {
 			<li><?php echo $value; ?></li>
 		<?php endforeach; ?>
 	</ul>
-    <?php endif; ?>
+　　<?php endif; ?>
+
+    <!--<?php if(! empty($error_message) ): ?> -->
+    <!--<p class="error_message"><?php echo $error_message; ?> </p> -->
+    <!--<?php endif; ?> -->
     
-    <!--投稿-->
-
-
-    <form name="post">
-        <div>
-           
-            <label for="view_name">タイトル：<label>
-		    <input id="view_name" type="text" name="view_name" value="">
+    <!--入力フォーム-->
+    <form method="post">
+        <div class="title">
         
-        </div>
-
-	    
-	    <div>
-		
-            <label for="name">記事：</label>
-		    <textarea name="message" rows="10" cols="60"></textarea>
-    
+		    <p>タイトル：</p>
+		    <input id="view_name" type="text" name="view_name" value="">
 	    </div>
-        <div>
+	    <div class="article">
+		    <p>記事：</p>
+		    <textarea name="message" rows="10" cols="60"></textarea>
+	    </div>
+        <div class="submit">
 	        <input type="submit" name="btn_submit" value="投稿">
         </div>    
     </form>
-
+	
+　　 
+    <!--投稿されたメッセージを表示 -->
     <hr>
     <section>
     <?php if( !empty($message_array) ): ?>
@@ -210,4 +206,9 @@ if( $file_handle = fopen( FILENAME,'r') ) {
 
 
 </body>
+
 </html>
+
+
+
+
